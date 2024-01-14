@@ -45,18 +45,21 @@ class _TruckMovementScreenState extends State<TruckMovementScreen>
     try {
       final url = Uri.https(
         'haulify-2406e-default-rtdb.asia-southeast1.firebasedatabase.app',
-        'users/${widget.selectedTruck.key}.json',
+        'users/${widget.selectedTruck.key}',
       );
 
-      final response = await http.patch(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'movement': currentPosition.toString(),
-        }),
-      );
+      final response = await http.get(url);
 
       if (response.statusCode == 200) {
+        // record exists, update the movement value
+        await http.patch(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({
+            'movement': currentPosition.toString(),
+          }),
+        );
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Movement updated successfully'),
@@ -67,6 +70,12 @@ class _TruckMovementScreenState extends State<TruckMovementScreen>
         setState(() {
           widget.selectedTruck.movement = currentPosition.toString();
         });
+      } else if (response.statusCode == 404) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Record does not exist'),
+          ),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -78,6 +87,7 @@ class _TruckMovementScreenState extends State<TruckMovementScreen>
       print('Error updating movement: $error');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
